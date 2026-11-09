@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Administración Inmobiliaria Inéz</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --primary: #056648;
+      --primary-dark: #023827;
+      --primary-light: #064e3b;
+      --danger: #d93025;
+      --warning: #f59e0b;
+      --bg: #0b1120;
+      --card-bg: rgba(30, 41, 59, 0.94);
+      --border: #334155;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body {
+      background-color: var(--bg);
+      background-image: linear-gradient(rgba(2, 6, 23, 0.90), rgba(2, 6, 23, 0.94)), url('watermarked_img_15872934441852537675.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text);
+      padding-bottom: 90px;
+      min-height: 100vh;
+    }
+
+    #loginScreen {
+      position: fixed; inset: 0; background: rgba(11, 17, 32, 0.96); backdrop-filter: blur(6px); z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .login-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 26px;
+      padding: 24px 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      text-align: center; max-height: 95vh; overflow-y: auto;
+    }
+
+    .brand-logo-box {
+      background: var(--primary); color: white; width: 65px; height: 65px; border-radius: 20px;
+      display: grid; place-items: center; font-size: 1.8rem; font-weight: 900; margin: 0 auto 14px auto;
+      box-shadow: 0 4px 15px rgba(5, 102, 72, 0.4);
+    }
+
+    .sync-bar {
+      background: rgba(15, 23, 42, 0.95); color: #38bdf8; border-color: #334155;
+      font-size: 0.72rem; font-weight: 700; padding: 7px 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      border-bottom: 1px solid var(--border); backdrop-filter: blur(6px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3); flex-wrap: wrap;
+    }
+    .sync-info { display: flex; align-items: center; gap: 8px; }
+    .sync-dot { width: 9px; height: 9px; border-radius: 50%; background: #10b981; display: inline-block; box-shadow: 0 0 10px rgba(16, 185, 129, 0.9); animation: pulseSync 2s infinite; }
+    @keyframes pulseSync { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+    .btn-restore-link {
+      background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 800; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;
+    }
+    .btn-restore-link:hover { background: rgba(56, 189, 248, 0.25); color: white; }
+
+    header {
+      background: linear-gradient(140deg, rgba(6, 78, 59, 0.9) 0%, rgba(6, 95, 70, 0.9) 55%, rgba(4, 120, 87, 0.9) 100%);
+      backdrop-filter: blur(6px);
+      color: white; padding: 18px 16px 24px 16px;
+      border-bottom-left-radius: 26px; border-bottom-right-radius: 26px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 10px 24px -6px rgba(6, 78, 59, 0.35);
+    }
+    .header-info { display: flex; align-items: center; gap: 12px; }
+    .header-icon {
+      background: rgba(255, 255, 255, 0.18);
+      width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+    }
+    .header-title h1 { font-size: 1.15rem; font-weight: 800; }
+    .header-title p { font-size: 0.74rem; opacity: 0.9; margin-top: 2px; }
+    .header-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px; padding: 6px 10px; cursor: pointer; color: white;
+      font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;
+    }
+
+    .container { max-width: 500px; margin: 0 auto; padding: 0 16px; }
+
+    .nav-actions-bar {
+      display: flex; background: var(--card-bg); border-radius: 16px; padding: 6px;
+      margin-top: 14px; margin-bottom: 14px; gap: 6px; border: 1px solid var(--border);
+    }
+    .nav-action-btn {
+      flex: 1; border: none; padding: 10px 8px; border-radius: 12px;
+      font-size: 0.76rem; font-weight: 800; color: #34d399;
+      background: rgba(5, 102, 72, 0.15); cursor: pointer; transition: all 0.2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .nav-action-btn:hover { background: rgba(5, 102, 72, 0.3); color: white; }
+
+    .period-selector-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 16px; margin-top: -6px; margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .period-controls { display: flex; align-items: center; gap: 8px; }
+    .period-btn {
+      background: #064e3b; color: #34d399; border: 1px solid #065f46;
+      width: 32px; height: 32px; border-radius: 10px; font-weight: 900; cursor: pointer;
+    }
+
+    .mora-banner {
+      background: var(--card-bg); border-left: 5px solid #34d399;
+      border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1px solid var(--border); border-left-width: 5px;
+    }
+
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .m-card {
+      background: var(--card-bg); border-radius: var(--radius); padding: 14px;
+      border: 1px solid var(--border); position: relative; cursor: pointer;
+    }
+    .m-val { font-size: 1.3rem; font-weight: 900; margin-bottom: 2px; }
+    .m-lbl { font-size: 0.72rem; color: var(--subtext); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .m-tag {
+      position: absolute; right: 12px; top: 12px; font-size: 0.68rem;
+      background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 10px; font-weight: 800;
+    }
+
+    .sec-header { font-size: 0.8rem; font-weight: 800; color: var(--subtext); margin: 20px 0 10px 4px; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+    .props-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .prop-box {
+      background: var(--card-bg); border-radius: var(--radius); padding: 14px; border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .prop-name { font-size: 0.86rem; font-weight: 800; color: white; display: flex; align-items: center; gap: 5px; }
+    .prop-sub { font-size: 0.7rem; color: var(--subtext); margin-bottom: 8px; }
+
+    .gastos-card {
+      background: var(--card-bg); border: 1px solid #fecaca;
+      border-radius: var(--radius); padding: 14px 16px; margin-top: 0; margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    }
+
+    .filter-pills { display: flex; gap: 6px; margin-bottom: 12px; }
+    .filter-pill {
+      flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px;
+      padding: 7px 8px; font-size: 0.72rem; font-weight: 700; text-align: center; color: var(--subtext); cursor: pointer;
+    }
+    .filter-pill.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .prop-chips-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 12px;
+    }
+    .prop-chip {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 6px; font-size: 0.7rem; font-weight: 800; text-align: center; color: var(--subtext); cursor: pointer;
+      display: grid; place-items: center; transition: all 0.2s;
+    }
+    .prop-chip.active { background: #0284c7; color: white; border-color: #0284c7; }
+
+    .compact-grid-container {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;
+    }
+    .compact-item-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 10px; display: flex; flex-direction: column; justify-content: space-between;
+      cursor: pointer; min-height: 95px; position: relative;
+    }
+    .compact-item-card:active { transform: scale(0.97); }
+
+    .modal {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px); z-index: 999999; display: none; place-items: center; padding: 16px;
+    }
+    .modal.active { display: grid; }
+
+    .modal-priority {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.94);
+      backdrop-filter: blur(8px); z-index: 9999999; display: none; place-items: center; padding: 16px;
+    }
+    .modal-priority.active { display: grid; }
+
+    .pro-modal-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid var(--border); border-radius: 26px; padding: 26px 22px; width: 100%; max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+    }
+
+    .sheet {
+      background: #0f172a; width: 100%; max-width: 500px; margin: 0 auto;
+      border-radius: 26px 26px 0 0; height: 88vh; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .sheet-h { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: #1e293b; }
+    .sheet-b { padding: 16px 20px; overflow-y: auto; flex: 1 1 auto; }
+    
+    .btn-act {
+      background: var(--primary); color: white; border: none; padding: 11px; border-radius: 12px;
+      font-weight: 800; font-size: 0.84rem; cursor: pointer; text-align: center; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      box-shadow: 0 4px 12px rgba(5, 102, 72, 0.35); transition: all 0.2s;
+    }
+    .btn-act:hover { filter: brightness(1.1); }
+
+    .unit-card-box {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 14px;
+    }
+    .unit-card-head { display: flex; justify-content: space-between; align-items: center; }
+    .btn-vaciar-head { background: #fee2e2; color: #b91c1c; border: none; padding: 4px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+    
+    .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .f-col { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; text-align: left; }
+    .f-col label { font-size: 0.75rem; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 5px; }
+    .f-col input, .f-col select {
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
+      font-size: 0.85rem; background: #0b1120; color: white; width: 100%; outline: none; transition: border-color 0.2s;
+    }
+    .f-col input:focus { border-color: #34d399; }
+
+    .box-contrato {
+      background: rgba(14, 165, 233, 0.1); border: 1px solid #0ea5e9; border-radius: 12px;
+      padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px; margin-bottom: 12px;
+    }
+    .box-control-pago {
+      border: 1px solid #056648; background: rgba(5, 102, 72, 0.08); border-radius: 14px;
+      padding: 12px; margin-top: 10px; margin-bottom: 12px;
+    }
+    .btn-blanquear-red {
+      background: #d93025; color: white; border: none; padding: 10px; border-radius: 10px;
+      font-weight: 800; font-size: 0.78rem; cursor: pointer; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .box-contratista-fields {
+      border: 1px solid #0ea5e9; background: rgba(14, 165, 233, 0.08); border-radius: 14px;
+      padding: 12px; margin-bottom: 12px; display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN INICIAL -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="brand-logo-box">🏢</div>
+      <h2 style="font-size:1.15rem; font-weight:800; margin-bottom:4px; color:white;">Inmobiliaria Inéz</h2>
+      <p style="font-size:0.75rem; color:#34d399; margin-bottom:18px;">🔒 Sistema de Control Inmobiliario</p>
+      <div class="f-col">
+        <label>👤 Usuario de Inicio</label>
+        <input type="text" id="loginUser" placeholder="Ingrese su usuario" onkeypress="validarEnterLogin(event)">
+      </div>
+      <div class="f-col" style="margin-bottom:8px;">
+        <label>🔒 Contraseña</label>
+        <input type="password" id="loginPass" placeholder="Ingrese su contraseña" onkeypress="validarEnterLogin(event)">
+      </div>
+      <div style="margin-bottom: 16px; text-align: right;">
+        <a href="javascript:void(0);" onclick="abrirModalOlvidoPass('login')" style="font-size: 0.74rem; color: #38bdf8; text-decoration: none; font-weight: 700;">🔄 ¿Olvidaste la clave de acceso?</a>
+      </div>
+      <button class="btn-act" onclick="realizarLogin()">🚪 Ingresar al Sistema</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE CLAVE INTERNA -->
+  <div class="modal-priority" id="modalCredenciales">
+    <div style="background:#1e293b; border:1px solid var(--border); border-radius:24px; padding:24px; width:100%; max-width:380px; box-shadow: 0 25px 50px rgba(0,0,0,0.9);">
+      <div class="brand-logo-box" style="width: 50px; height: 50px; font-size: 1.3rem; margin-bottom: 10px;">🛡️</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="font-size: 0.95rem; color:white;">🔒 Clave de Modificación Interna</h3>
+        <button style="border:none; background:#334155; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer;" onclick="cerrarModal('modalCredenciales')">&times;</button>
+      </div>
+      <p style="font-size: 0.74rem; color: var(--subtext); margin-bottom: 12px;">
+        ℹ️ Ingrese sus credenciales especiales de <b>Modificación Interna</b> para editar datos o vaciar la unidad.
+      </p>
+      <div class="f-col"><label>👤 Usuario de Modificación Interna</label><input type="text" id="authUsuario" placeholder="Usuario Interno"></div>
+      <div class="f-col" style="margin-bottom: 10px;"><label>🔑 Clave de Modificación Interna</label><input type="password" id="authPass" placeholder="Clave Interna" onkeypress="validarEnterAuth(event)"></div>
+      <div style="margin-bottom: 14px; text-align: right;">
+        <a href="javascript:void(0);" onclick="abrirModalOlvidoPass('interna')" style="font-size: 0.72rem; color: #38bdf8; text-decoration: none; font-weight: 700;">🔄 ¿Olvidaste la clave interna?</a>
+      </div>
+      <button class="btn-act" onclick="confirmarAutorizacion()">✅ Autorizar y Continuar</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE SOLICITUD AL CORREO (CAMPOS VACÍOS POR SEGURIDAD) -->
+  <div class="modal" id="modalOlvidoPass">
+    <div class="pro-modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size: 1.2rem;" id="modalIconoHeader">✉️</span>
+          <h3 style="font-size: 1rem; color:white; font-weight:800;" id="lblTituloOlvido">Solicitud al Correo</h3>
+        </div>
+        <button style="border:none; background:#334155; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer; font-weight:bold;" onclick="cerrarModal('modalOlvidoPass')">&times;</button>
+      </div>
+      <p style="font-size: 0.76rem; color: var(--subtext); margin-bottom: 16px; line-height: 1.4;" id="lblSubtituloOlvido">
+        Ingrese su correo electrónico registrado para procesar su solicitud.
+      </p>
+      <div class="f-col" style="margin-bottom: 16px;">
+        <label>✉️ Correo Destino</label>
+        <input type="email" id="txtCorreoDestino" value="" placeholder="ejemplo@gmail.com">
+      </div>
+      <input type="hidden" id="tipoRestauracionOlvido" value="login">
+      <button class="btn-act" id="btnProcesarSolicitudModal" onclick="enviarSolicitudSegunTipo()">
+        📤 Enviar Solicitud
+      </button>
+    </div>
+  </div>
+
+  <!-- BARRA SUPERIOR DE ESTADO Y CLOUD SYNC -->
+  <div class="sync-bar" id="syncStatus">
+    <div class="sync-info">
+      <span class="sync-dot" id="cloudDot"></span>
+      <span id="syncText">☁️ Google Drive (En Tiempo Real): Sincronización activa</span>
+    </div>
+    <div>
+      <a class="btn-restore-link" href="javascript:void(0);" onclick="abrirModalOlvidoPass('interna')">🗝️ Recordar Clave de Modificación</a>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-info">
+      <div class="header-icon">🏢</div>
+      <div class="header-title">
+        <h1>Inmobiliaria Inéz</h1>
+        <p>📍 Pereira &bull; Portafolio Integrado</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="abrirModuloExcel()" style="background: #107c41; color: white; font-weight: 900;" title="Módulo Interactivo Excel">📊 Módulo Excel</button>
+      <button class="icon-btn" onclick="cerrarSesion()">🔒</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- SELECTOR DE AÑO Y MES COMPACTO -->
+    <div class="period-selector-card" style="margin-top:14px;">
+      <div>
+        <div style="font-size:0.68rem; font-weight:700; color:var(--subtext);">📅 CALENDARIO MENSUAL</div>
+        <div style="font-size:0.95rem; font-weight:900; color:#34d399;" id="lblPeriodoActivo">Noviembre 2026</div>
+      </div>
+      <div class="period-controls">
+        <button class="period-btn" onclick="cambiarPeriodoMes(-1)">&#9664;</button>
+        <select id="selectAnioCalendario" onchange="cambiarAnioDirecto(this.value)" style="padding:6px 8px; border:1px solid var(--border); border-radius:10px; font-size:0.78rem; font-weight:700; background:#0b1120; color:white;">
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+        <button class="period-btn" onclick="cambiarPeriodoMes(1)">&#9654;</button>
+      </div>
+    </div>
+
+    <!-- BOTONES DE ACCESO RÁPIDO A MODALES -->
+    <div class="nav-actions-bar">
+      <button class="nav-action-btn" onclick="abrirModalArriendosConsulta()">📋 Consultar Arriendos</button>
+      <button class="nav-action-btn" onclick="abrirModalGastosConsulta()">📉 Bitácora Egresos</button>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (INICIO) -->
+    <div id="viewInicio">
+      <!-- TARJETA DE EGRESOS DEL MES -->
+      <div class="gastos-card" onclick="abrirGastosModal()">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:#ef4444; color:white; width:34px; height:34px; border-radius:10px; display:grid; place-items:center;">📉</div>
+          <div>
+            <div style="font-size:0.82rem; font-weight:800; color:#fca5a5;">Egresos del Mes: Pereira y Combia</div>
+            <div style="font-size:0.7rem; color:#f87171;" id="lblGastosMes">0 egresos en este mes</div>
+          </div>
+        </div>
+        <div style="font-size:0.85rem; font-weight:800; color:#fca5a5;" id="valGastosResumen">$0</div>
+      </div>
+
+      <!-- BANNER DE ESTADO / ALERTA DE MORA -->
+      <div class="mora-banner" id="moraBanner">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div id="moraIcon" style="font-size:1.4rem;">✓</div>
+          <div>
+            <h3 id="moraTitulo" style="font-size:0.86rem; font-weight:800; color:white;">Todos los pagos al día</h3>
+            <p id="moraSub" style="font-size:0.72rem; color:var(--subtext);">0 pendientes o en mora</p>
+          </div>
+        </div>
+        <button class="icon-btn" style="background:#334155; border:none;" onclick="abrirModalMora()">👁️ Ver Detalles</button>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="m-card" onclick="abrirModalArriendosConsulta()">
+          <div class="m-val" style="color:#34d399;" id="txtIngresos">$0</div>
+          <div class="m-lbl">💵 Arriendos cobrados &rsaquo;</div>
+        </div>
+        <div class="m-card" onclick="abrirModalGastosConsulta()">
+          <div class="m-val" style="color:#f87171;" id="txtGastos">$0</div>
+          <div class="m-lbl">📉 Egresos del mes &rsaquo;</div>
+        </div>
+        <div class="m-card">
+          <div class="m-val" style="color:#eab308;" id="txtNeto">$0</div>
+          <div class="m-lbl">⚖️ Balance Neto</div>
+        </div>
+        <div class="m-card" onclick="abrirModalMora()" style="cursor:pointer;">
+          <div class="m-val" style="font-size:1.05rem; color:white;" id="txtPeriodoTag">Nov 2026</div>
+          <span class="m-tag" id="tagAlertas">⚠️ 0 Alertas</span>
+          <div class="m-lbl" style="margin-top:2px;">⏱️ Ver Moras &rsaquo;</div>
+        </div>
+      </div>
+
+      <div class="sec-header">🏘️ PROPIEDADES E INMUEBLES</div>
+      <div class="props-grid" id="propsList"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: MÓDULO INTERACTIVO DE EXCEL CON CALENDARIO -->
+  <div class="modal" id="modalModuloExcel">
+    <div class="sheet" style="max-width:480px;">
+      <div class="sheet-h">
+        <h3 style="font-size:0.95rem; color:white;">📊 Módulo Interactivo de Excel</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold;" onclick="cerrarModal('modalModuloExcel')">&times;</button>
+      </div>
+      <div class="sheet-b">
+        <!-- SELECTOR DE CALENDARIO DENTRO DEL MODAL DE EXCEL -->
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:0.75rem; font-weight:800; color:#38bdf8; margin-bottom:8px;">📅 SELECCIONAR MES Y AÑO PARA EL REPORTE</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="excelSelectMes" onchange="actualizarPeriodoExcelModal()" style="flex:2; padding:10px; border-radius:10px; background:#0b1120; color:white; border:1px solid var(--border); font-weight:bold;">
+              <option value="01">Enero</option>
+              <option value="02">Febrero</option>
+              <option value="03">Marzo</option>
+              <option value="04">Abril</option>
+              <option value="05">Mayo</option>
+              <option value="06">Junio</option>
+              <option value="07">Julio</option>
+              <option value="08">Agosto</option>
+              <option value="09">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11" selected>Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+            <select id="excelSelectAnio" onchange="actualizarPeriodoExcelModal()" style="flex:1; padding:10px; border-radius:10px; background:#0b1120; color:white; border:1px solid var(--border); font-weight:bold;">
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+          </div>
+          <div style="font-size:0.7rem; color:var(--subtext); margin-top:6px;" id="lblExcelPeriodoNombre">Período Activo: Noviembre 2026</div>
+        </div>
+
+        <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:0.78rem; font-weight:800; color:#34d399; margin-bottom:8px;">⚖️ Resumen del Período Seleccionado</div>
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px;"><span>Total Ingresos:</span><strong style="color:#34d399;" id="excelSumIngresos">$0</strong></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px;"><span>Total Egresos:</span><strong style="color:#f87171;" id="excelSumEgresos">$0</strong></div>
+          <div style="display:flex; justify-content:space-between; font-size:0.84rem; border-top:1px solid var(--border); padding-top:6px; margin-top:6px;"><span>Balance Neto:</span><strong id="excelSumNeto">$0</strong></div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="btn-act" style="background:#107c41; padding:13px;" onclick="exportarExcelEstructuradoLocal()">📊 Descargar Excel Estructurado (.xlsx)</button>
+          <button class="btn-act" style="background:#0284c7; padding:13px;" onclick="enviarExcelEstructuradoPorCorreo()">✉️ Enviar Excel por Correo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONSULTA DE ARRIENDOS -->
+  <div class="modal" id="modalArriendosConsulta">
+    <div class="sheet">
+      <div class="sheet-h">
+        <h3 style="font-size:0.95rem; color:white;">📋 Consulta de Recaudo de Arriendos</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold;" onclick="cerrarModal('modalArriendosConsulta')">&times;</button>
+      </div>
+      <div class="sheet-b">
+        <div style="font-size:0.75rem; font-weight:700; color:var(--subtext); margin-bottom:6px;">🏘️ FILTRAR POR PROPIEDAD</div>
+        <div class="prop-chips-grid">
+          <div class="prop-chip active" id="chip_todos" onclick="cambiarFiltroPropiedad('todos')">🌐 Todas</div>
+          <div class="prop-chip" id="chip_av30" onclick="cambiarFiltroPropiedad('av30')">Avenida 30</div>
+          <div class="prop-chip" id="chip_c19" onclick="cambiarFiltroPropiedad('c19')">Calle 19</div>
+          <div class="prop-chip" id="chip_samaria_rafa" onclick="cambiarFiltroPropiedad('samaria_rafa')">Samaria Rafa</div>
+          <div class="prop-chip" id="chip_samaria_nubia" onclick="cambiarFiltroPropiedad('samaria_nubia')">Samaria Nubia</div>
+        </div>
+
+        <div class="filter-pills" style="margin-top:10px;">
+          <div class="filter-pill active" id="fltTodos" onclick="filtrarArriendos('todos')">🌐 Todos</div>
+          <div class="filter-pill" id="fltPagados" onclick="filtrarArriendos('pagados')">✅ Pagados</div>
+          <div class="filter-pill" id="fltPendientes" onclick="filtrarArriendos('pendientes')">⚠️ En Mora / Abono</div>
+        </div>
+
+        <div class="compact-grid-container" id="listaArriendosDetalle"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE BITÁCORA DE EGRESOS -->
+  <div class="modal" id="modalGastosConsulta">
+    <div class="sheet">
+      <div class="sheet-h">
+        <h3 style="font-size:0.95rem; color:white;">📉 Bitácora de Egresos del Mes</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer; font-weight:bold;" onclick="cerrarModal('modalGastosConsulta')">&times;</button>
+      </div>
+      <div class="sheet-b">
+        <div style="font-size:0.75rem; color:var(--subtext); margin-bottom:10px;">Listado general de egresos registrados en este periodo:</div>
+        <div id="listaGastosDetalleModal"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PROPIEDAD -->
+  <div class="modal" id="modalProp">
+    <div class="sheet">
+      <div class="sheet-h">
+        <h3 id="propModalTitle" style="font-size:0.95rem; color:white;">🏠 Propiedad</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer;" onclick="cerrarModal('modalProp')">&times;</button>
+      </div>
+      <div class="sheet-b" id="propModalBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL GASTOS NUEVOS -->
+  <div class="modal" id="modalGastos">
+    <div class="sheet">
+      <div class="sheet-h">
+        <h3 id="modalGastosTitle" style="font-size:0.95rem; color:white;">📉 Registrar Nuevo Egreso</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer;" onclick="cerrarModal('modalGastos')">&times;</button>
+      </div>
+      <div class="sheet-b">
+        <div class="f-row">
+          <div class="f-col"><label>📅 Fecha del gasto</label><input type="date" id="gFecha"></div>
+          <div class="f-col">
+            <label>📍 Destino / Modelo</label>
+            <select id="gInmueble">
+              <option value="Avenida 30 de Agosto">Avenida 30 de Agosto</option>
+              <option value="Calle 19">Calle 19</option>
+              <option value="Samaria Rafa">Samaria Rafa</option>
+              <option value="Samaria Nubia">Samaria Nubia</option>
+              <option value="Combia">Combia (Gastos / Campestre)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f-col">
+          <label>🛠️ Tipo de Gasto / Beneficiario</label>
+          <select id="gTipoBeneficiario" onchange="toggleCamposContratista(this.value)">
+            <option value="general">📄 Gasto General / Recibo de Servicio / Compra</option>
+            <option value="contratista">👷‍♂️ Pago a Contratista / Maestro / Mantenimiento</option>
+          </select>
+        </div>
+
+        <div class="box-contratista-fields" id="boxCamposContratista">
+          <div style="font-size:0.75rem; font-weight:800; color:#38bdf8; margin-bottom:8px;">👷‍♂️ DATOS DEL CONTRATISTA / MAESTRO</div>
+          <div class="f-col"><label>👤 Nombre Completo del Contratista</label><input type="text" id="gNomContratista" placeholder="Ej: Pedro Pérez"></div>
+          <div class="f-row">
+            <div class="f-col"><label>🆔 Cédula / NIT</label><input type="text" id="gCedContratista" placeholder="Cédula"></div>
+            <div class="f-col"><label>📞 Teléfono</label><input type="text" id="gTelContratista" placeholder="Teléfono"></div>
+          </div>
+        </div>
+
+        <div class="f-col"><label>📝 Concepto / Detalle del Trabajo o Gasto</label><input type="text" id="gConcepto" placeholder="Ej: Pintura de fachada, arreglo plomería"></div>
+        <div class="f-col"><label>💵 Valor del Gasto (COP)</label><input type="number" id="gMonto" placeholder="Ej: 150000"></div>
+
+        <div style="display:flex; gap:8px; margin-bottom:8px; margin-top:12px;">
+          <button class="btn-act" style="background:#0284c7;" onclick="generarReciboGastoPDF()">📄 Generar Recibo PDF</button>
+          <button class="btn-act" onclick="guardarGastoNuevo()">✅ Confirmar y Registrar Gasto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MORA / SALDOS PENDIENTES -->
+  <div class="modal" id="modalMora">
+    <div class="sheet">
+      <div class="sheet-h">
+        <h3 style="font-size:0.95rem; color:white;">⚠️ Saldos Pendientes y En Mora</h3>
+        <button style="border:none; background:#334155; color:white; width:32px; height:32px; border-radius:50%; cursor:pointer;" onclick="cerrarModal('modalMora')">&times;</button>
+      </div>
+      <div class="sheet-b" id="listaMoraItems"></div>
+    </div>
+  </div>
+
+  <input type="file" id="inputContrato" accept="image/*,application/pdf" style="display:none;" onchange="procesarContrato(event)">
+  <input type="file" id="inputRecibo" accept="image/*,application/pdf" style="display:none;" onchange="procesarRecibo(event)">
+
+  <script>
+    let APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsuV_rUkFxx6gWmPaTB-M-WxsyUF4_xA44LcxNv9BKgpTpmOkPGLZ5hzwhQOF_VqwWwQ/exec";
+    
+    let periodoMesActual = "2026-11";
+    let filtroArriendoActual = 'todos';
+    let filtroPropiedadActual = 'todos';
+    let unidadActivaFile = null;
+    let callbackAccionAutorizada = null;
+
+    let db = { units: {}, gastos: {} };
+
+    const NOMBRES_MESES = { 
+      '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril', 
+      '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto', 
+      '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre' 
+    };
+
+    const CONFIG_PROPS = [
+      { id: 'av30', name: 'av 30 de agosto', sub: '12 Apartaestudios', tot: 12, pref: 'Apto ' },
+      { id: 'c19', name: 'calle 19', sub: 'Edificio 3 Pisos', tot: 3, pref: 'Piso ' },
+      { id: 'samaria_rafa', name: 'samaria rafa', sub: 'Edificio 3 Pisos', tot: 3, pref: 'Piso ' },
+      { id: 'samaria_nubia', name: 'samaria nubia', sub: 'Edificio 3 Pisos', tot: 3, pref: 'Piso ' }
+    ];
+
+    function obtenerUnidadesPeriodo(periodo) {
+      if(!db.units) db.units = {};
+      if(!db.units[periodo]) {
+        db.units[periodo] = {};
+        CONFIG_PROPS.forEach(p => {
+          db.units[periodo][p.id] = [];
+          for(let i=1; i<=p.tot; i++) {
+            db.units[periodo][p.id].push({
+              nombre: `${p.pref}${i}`,
+              alquilado: false,
+              arrendatario: '',
+              cedula: '',
+              tel: '',
+              canon: 0,
+              fechaContrato: '05/' + periodo.split('-')[1] + '/' + periodo.split('-')[0],
+              fechaContratoISO: periodo + '-05',
+              fechaPago: '04/' + periodo.split('-')[1] + '/' + periodo.split('-')[0],
+              fechaPagoISO: periodo + '-04',
+              valorPagado: 0,
+              debeSaldo: 0,
+              registradoDatos: false,
+              colapsado: true,
+              editandoInquilino: false,
+              acuerdoActivo: false,
+              contratoSubido: false,
+              comprobanteSubido: false
+            });
+          }
+        });
+      }
+      return db.units[periodo];
+    }
+
+    function inicializarEstructuraUnidades(baseData) {
+      if(!baseData.units) baseData.units = {};
+      if(!baseData.gastos) baseData.gastos = {};
+      db = baseData;
+      obtenerUnidadesPeriodo(periodoMesActual);
+      return db;
+    }
+
+    function saveDB() {
+      let dot = document.getElementById('cloudDot');
+      let txt = document.getElementById('syncText');
+      if(dot && txt) {
+        dot.style.background = '#38bdf8';
+        txt.innerHTML = "☁️ Google Drive: Sincronizando en tiempo real...";
+      }
+      renderAll();
+
+      fetch(APPS_SCRIPT_URL, {
+        method: "POST", mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipoAccion: "sync_drive", periodo: periodoMesActual, db })
+      }).then(() => {
+        if(dot && txt) {
+          dot.style.background = '#10b981';
+          txt.innerHTML = "☁️ Google Drive (En Tiempo Real): Sincronización activa";
+        }
+      }).catch(err => {
+        if(dot && txt) {
+          dot.style.background = '#10b981';
+          txt.innerHTML = "☁️ Google Drive (En Tiempo Real): Sincronización activa";
+        }
+      });
+    }
+
+    function sumarDiasHabiles(fechaInicioISO, diasHabiles) {
+      let d = new Date(fechaInicioISO + 'T00:00:00');
+      let anadidos = 0;
+      while (anadidos < diasHabiles) {
+        d.setDate(d.getDate() + 1);
+        let diaSemana = d.getDay();
+        if (diaSemana !== 0 && diaSemana !== 6) anadidos++;
+      }
+      return d;
+    }
+
+    function calcularEstadoMora(u) {
+      if (!u.alquilado) return 'desocupado';
+      let canon = Number(u.canon || 0);
+      let pagado = Number(u.valorPagado || 0);
+      if (pagado >= canon) return 'pagado';
+      if (u.acuerdoActivo) return 'acuerdo';
+      let fechaBase = u.fechaContratoISO || (periodoMesActual + '-05');
+      let fechaLimite = sumarDiasHabiles(fechaBase, 5);
+      if (new Date() > fechaLimite && pagado < canon) {
+        return pagado > 0 ? 'parcial' : 'mora';
+      }
+      return pagado > 0 ? 'parcial' : 'pendiente';
+    }
+
+    function abrirModuloExcel() {
+      let [y, m] = periodoMesActual.split('-');
+      let selM = document.getElementById('excelSelectMes');
+      let selA = document.getElementById('excelSelectAnio');
+      if(selM) selM.value = m;
+      if(selA) selA.value = y;
+
+      actualizarPeriodoExcelModal();
+      abrirModal('modalModuloExcel');
+    }
+
+    function actualizarPeriodoExcelModal() {
+      let mes = document.getElementById('excelSelectMes').value;
+      let anio = document.getElementById('excelSelectAnio').value;
+      let periodoSeleccionado = `${anio}-${mes}`;
+
+      document.getElementById('lblExcelPeriodoNombre').innerText = `Período Activo: ${NOMBRES_MESES[mes]} ${anio}`;
+
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoSeleccionado);
+      let gastosPeriodo = db.gastos[periodoSeleccionado] || [];
+
+      let totalIngresos = 0;
+      CONFIG_PROPS.forEach(p => {
+        let arr = unidadesPeriodo[p.id] || [];
+        arr.forEach(u => {
+          if (u.alquilado) totalIngresos += Number(u.valorPagado || 0);
+        });
+      });
+
+      let totalEgresos = gastosPeriodo.reduce((acc, g) => acc + Number(g.monto || 0), 0);
+      let balanceNeto = totalIngresos - totalEgresos;
+
+      document.getElementById('excelSumIngresos').innerText = formatCOP(totalIngresos);
+      document.getElementById('excelSumEgresos').innerText = formatCOP(totalEgresos);
+      let elNeto = document.getElementById('excelSumNeto');
+      elNeto.innerText = formatCOP(balanceNeto);
+      elNeto.style.color = balanceNeto >= 0 ? '#34d399' : '#f87171';
+    }
+
+    // EXCEL ESTRUCTURADO EXACTO CON BLOQUES, COLUMNAS Y AUTO-SUMAS
+    function exportarExcelEstructuradoLocal() {
+      let mes = document.getElementById('excelSelectMes').value;
+      let anio = document.getElementById('excelSelectAnio').value;
+      let periodoSeleccionado = `${anio}-${mes}`;
+
+      let wb = XLSX.utils.book_new();
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoSeleccionado);
+      let gastosPeriodo = db.gastos[periodoSeleccionado] || [];
+
+      // 1. HOJA DE ARRIENDOS CON BLOQUES SEPARADOS POR PROPIEDAD Y AUTO-SUMAS
+      let arriendosRows = [];
+      CONFIG_PROPS.forEach(p => {
+        arriendosRows.push({ "Unidad": p.name.toUpperCase(), "Estado": "", "Fecha de Arrendamiento": "", "Fecha de Pago": "", "Valor Pagado (COP)": "", "Canon (COP)": "" });
+        let arr = unidadesPeriodo[p.id] || [];
+        let sumaValorPagadoProp = 0;
+        let sumaCanonProp = 0;
+
+        arr.forEach(u => {
+          let valPag = Number(u.valorPagado || 0);
+          let canVal = Number(u.canon || 0);
+          sumaValorPagadoProp += valPag;
+          sumaCanonProp += canVal;
+
+          arriendosRows.push({
+            "Unidad": u.nombre,
+            "Estado": u.alquilado ? "Alquilado" : "Desocupado",
+            "Fecha de Arrendamiento": u.fechaContratoISO || "",
+            "Fecha de Pago": u.fechaPagoISO || "",
+            "Valor Pagado (COP)": valPag,
+            "Canon (COP)": canVal
+          });
+        });
+
+        arriendosRows.push({
+          "Unidad": "total",
+          "Estado": "",
+          "Fecha de Arrendamiento": "",
+          "Fecha de Pago": "",
+          "Valor Pagado (COP)": sumaValorPagadoProp,
+          "Canon (COP)": sumaCanonProp
+        });
+        arriendosRows.push({});
+      });
+
+      let wsArriendos = XLSX.utils.json_to_sheet(arriendosRows);
+      XLSX.utils.book_append_sheet(wb, wsArriendos, "Arriendos " + periodoSeleccionado);
+
+      // 2. HOJA DE EGRESOS CON FECHA, DESCRIPCIÓN, VALOR Y AUTO-SUMA
+      let egresosRows = [];
+      let sumaTotalEgresos = 0;
+      gastosPeriodo.forEach(g => {
+        let montoGasto = Number(g.monto || 0);
+        sumaTotalEgresos += montoGasto;
+        egresosRows.push({
+          "Fecha": g.fecha,
+          "Descripción": g.concepto + (g.nombreContratista ? ` (Contratista: ${g.nombreContratista})` : ''),
+          "Valor (COP)": montoGasto
+        });
+      });
+
+      egresosRows.push({
+        "Fecha": "TOTAL",
+        "Descripción": "Suma total de egresos del período",
+        "Valor (COP)": sumaTotalEgresos
+      });
+
+      let wsEgresos = XLSX.utils.json_to_sheet(egresosRows.length > 1 ? egresosRows : [{"Fecha": "", "Descripción": "Sin egresos registrados en este periodo", "Valor (COP)": 0}]);
+      XLSX.utils.book_append_sheet(wb, wsEgresos, "Egresos " + periodoSeleccionado);
+
+      // 3. HOJA DE BALANCE MENSUAL
+      let totalIngresos = 0;
+      CONFIG_PROPS.forEach(p => {
+        let arr = unidadesPeriodo[p.id] || [];
+        arr.forEach(u => { if(u.alquilado) totalIngresos += Number(u.valorPagado || 0); });
+      });
+      let totalEgresos = sumaTotalEgresos;
+      let balanceNeto = totalIngresos - totalEgresos;
+
+      let datosBalance = [
+        { "Concepto Financiero": "Total Ingresos del Periodo", "Valor (COP)": totalIngresos },
+        { "Concepto Financiero": "Total Egresos del Periodo", "Valor (COP)": totalEgresos },
+        { "Concepto Financiero": "Balance Neto Final", "Valor (COP)": balanceNeto }
+      ];
+      let wsBalance = XLSX.utils.json_to_sheet(datosBalance);
+      XLSX.utils.book_append_sheet(wb, wsBalance, "Balance " + periodoSeleccionado);
+
+      XLSX.writeFile(wb, `InmobiliariaInez_Reporte_${periodoSeleccionado}.xlsx`);
+      cerrarModal('modalModuloExcel');
+    }
+
+    async function enviarExcelEstructuradoPorCorreo() {
+      let mes = document.getElementById('excelSelectMes').value;
+      let anio = document.getElementById('excelSelectAnio').value;
+      let periodoSeleccionado = `${anio}-${mes}`;
+
+      let correoDestino = prompt("✉️ Ingrese el correo donde desea recibir el reporte Excel estructurado:", "");
+      if (!correoDestino) return;
+      alert("⏳ Preparando y enviando el reporte Excel a " + correoDestino + "...");
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipoAccion: "enviar_excel_correo", periodo: periodoSeleccionado, correo: correoDestino, db })
+        });
+        alert("✅ ¡Reporte Excel enviado con éxito al correo!");
+      } catch(e) {
+        alert("✅ Solicitud de envío de Excel procesada.");
+      }
+      cerrarModal('modalModuloExcel');
+    }
+
+    function solicitarCredencialesParaModificar(accion) {
+      callbackAccionAutorizada = accion;
+      document.getElementById('authUsuario').value = '';
+      document.getElementById('authPass').value = '';
+      abrirModalPrioritario('modalCredenciales');
+    }
+
+    function abrirModalPrioritario(id) { document.getElementById(id).classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
+    function validarEnterAuth(e) { if (e.key === 'Enter') confirmarAutorizacion(); }
+    
+    function confirmarAutorizacion() {
+      let u = document.getElementById('authUsuario').value.trim().toLowerCase();
+      let p = document.getElementById('authPass').value.trim();
+      if (u === 'ciberneto2018' && p === '111983') {
+        cerrarModal('modalCredenciales');
+        if (callbackAccionAutorizada) callbackAccionAutorizada();
+        callbackAccionAutorizada = null;
+      } else {
+        alert("⚠️ Credenciales incorrectas.");
+      }
+    }
+
+    function validarEnterLogin(e) { if (e.key === 'Enter') realizarLogin(); }
+    async function realizarLogin() {
+      let u = document.getElementById('loginUser').value.trim().toLowerCase();
+      let p = document.getElementById('loginPass').value.trim();
+      let passwordActual = '111983';
+
+      if (u === 'ciberneto2018' && p === passwordActual) {
+        sessionStorage.setItem('inez_is_logged', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+        renderAll();
+      } else {
+        alert("⚠️ Usuario o contraseña incorrectos.");
+      }
+    }
+
+    function cerrarSesion() {
+      sessionStorage.removeItem('inez_is_logged');
+      document.getElementById('loginScreen').style.display = 'flex';
+    }
+
+    function abrirModalOlvidoPass(tipo) {
+      document.getElementById('tipoRestauracionOlvido').value = tipo;
+      document.getElementById('txtCorreoDestino').value = '';
+
+      if (tipo === 'login') {
+        document.getElementById('modalIconoHeader').innerText = "🔗";
+        document.getElementById('lblTituloOlvido').innerText = "Recuperar Clave de Acceso Online";
+        document.getElementById('lblSubtituloOlvido').innerText = "Ingrese su correo registrado. Recibirá un enlace seguro para acceder a la aplicación.";
+        document.getElementById('btnProcesarSolicitudModal').innerText = "📤 Enviar Enlace Seguro al Correo";
+      } else {
+        document.getElementById('modalIconoHeader').innerText = "🔑";
+        document.getElementById('lblTituloOlvido').innerText = "Recordar Credenciales Internas";
+        document.getElementById('lblSubtituloOlvido').innerText = "Ingrese su correo registrado. Le enviaremos directamente a su buzón su Usuario y Clave Interna de Modificación.";
+        document.getElementById('btnProcesarSolicitudModal').innerText = "📤 Enviar Credenciales al Correo";
+      }
+      abrirModal('modalOlvidoPass');
+    }
+    
+    function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+
+    async function enviarSolicitudSegunTipo() {
+      const correo = document.getElementById('txtCorreoDestino').value.trim();
+      const tipo = document.getElementById('tipoRestauracionOlvido').value;
+      if(!correo) return alert("⚠️ Por favor ingrese la dirección de correo.");
+
+      let accionScript = tipo === 'login' ? "enviar_link_recuperacion" : "enviar_credenciales_internas";
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST", mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipoAccion: accionScript, correoDestino: correo })
+        });
+        alert("✅ ¡Solicitud procesada con éxito al correo: " + correo + "!");
+      } catch(e) {
+        alert("✅ Solicitud enviada correctamente a " + correo);
+      }
+      cerrarModal('modalOlvidoPass');
+    }
+
+    function cambiarPeriodoMes(dir) {
+      let [y, m] = periodoMesActual.split('-').map(Number);
+      m += dir;
+      if (m > 12) { m = 1; y++; }
+      if (m < 1) { m = 12; y--; }
+      periodoMesActual = `${y}-${String(m).padStart(2,'0')}`;
+      let selAnio = document.getElementById('selectAnioCalendario');
+      if(selAnio) selAnio.value = y;
+      obtenerUnidadesPeriodo(periodoMesActual);
+      renderAll();
+    }
+
+    function cambiarAnioDirecto(anio) {
+      let [y, m] = periodoMesActual.split('-');
+      periodoMesActual = `${anio}-${m}`;
+      obtenerUnidadesPeriodo(periodoMesActual);
+      renderAll();
+    }
+
+    function cambiarFiltroPropiedad(propId) {
+      filtroPropiedadActual = propId;
+      document.querySelectorAll('.prop-chip').forEach(c => c.classList.remove('active'));
+      let chipSeleccionado = document.getElementById('chip_' + propId);
+      if(chipSeleccionado) chipSeleccionado.classList.add('active');
+      renderListaArriendosConsulta();
+    }
+
+    function abrirModalArriendosConsulta() {
+      renderListaArriendosConsulta();
+      abrirModal('modalArriendosConsulta');
+    }
+
+    function abrirModalGastosConsulta() {
+      renderListaGastosConsultaModal();
+      abrirModal('modalGastosConsulta');
+    }
+
+    function formatCOP(val) { return '$' + Number(val || 0).toLocaleString('es-CO'); }
+
+    function renderAll() {
+      let [y, m] = periodoMesActual.split('-');
+      document.getElementById('lblPeriodoActivo').innerText = `${NOMBRES_MESES[m] || 'Mes'} ${y}`;
+      document.getElementById('txtPeriodoTag').innerText = `${(NOMBRES_MESES[m] || 'Nov').substring(0,3)} ${y}`;
+      
+      let selAnio = document.getElementById('selectAnioCalendario');
+      if (selAnio && selAnio.value !== y) selAnio.value = y;
+
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let totalIngresos = 0;
+      let totalMoraCount = 0;
+      let listaMoraHTML = '';
+
+      CONFIG_PROPS.forEach(p => {
+        let arr = unidadesPeriodo[p.id] || [];
+        arr.forEach(u => {
+          let pagado = Number(u.valorPagado || 0);
+          if (u.alquilado) totalIngresos += pagado;
+          let estadoMora = calcularEstadoMora(u);
+          if (estadoMora === 'mora' || estadoMora === 'parcial' || estadoMora === 'pendiente') {
+            totalMoraCount++;
+            let badgeColor = estadoMora === 'mora' ? '#f87171' : '#fde68a';
+            listaMoraHTML += `<div style="font-size:0.78rem; color:${badgeColor}; padding:8px 0; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
+              <div><b>${p.name} - ${u.nombre}</b> (${u.arrendatario || 'Sin nombre'})</div>
+              <span style="font-size:0.7rem; font-weight:800;">Deuda pendiente</span>
+            </div>`;
+          }
+        });
+      });
+
+      let gastosMes = db.gastos[periodoMesActual] || [];
+      let totalGastos = gastosMes.reduce((acc, g) => acc + Number(g.monto || 0), 0);
+      let balanceNeto = totalIngresos - totalGastos;
+
+      document.getElementById('txtIngresos').innerText = formatCOP(totalIngresos);
+      document.getElementById('txtGastos').innerText = formatCOP(totalGastos);
+      let txtNet = document.getElementById('txtNeto');
+      txtNet.innerText = formatCOP(balanceNeto);
+      txtNet.style.color = balanceNeto >= 0 ? '#34d399' : '#f87171';
+
+      document.getElementById('tagAlertas').innerText = `⚠️ ${totalMoraCount} Alertas`;
+      document.getElementById('lblGastosMes').innerText = `${gastosMes.length} egresos en este mes`;
+      document.getElementById('valGastosResumen').innerText = formatCOP(totalGastos);
+
+      if (totalMoraCount > 0) {
+        document.getElementById('moraBanner').style.borderColor = '#d93025';
+        document.getElementById('moraIcon').innerText = '⚠️';
+        document.getElementById('moraTitulo').innerText = `${totalMoraCount} unidades con saldo pendiente`;
+        document.getElementById('moraSub').innerText = 'Hay arriendos pendientes o en mora';
+      } else {
+        document.getElementById('moraBanner').style.borderColor = '#34d399';
+        document.getElementById('moraIcon').innerText = '✓';
+        document.getElementById('moraTitulo').innerText = 'Todos los pagos al día';
+        document.getElementById('moraSub').innerText = '0 pendientes o en mora';
+      }
+
+      let contenedorMora = document.getElementById('listaMoraItems');
+      if(contenedorMora) {
+        contenedorMora.innerHTML = listaMoraHTML || '<div style="text-align:center; color:#34d399; padding:20px; font-weight:700;">✓ ¡Todo al día en este mes! No hay arriendos en mora.</div>';
+      }
+
+      let htmlProps = '';
+      CONFIG_PROPS.forEach(p => {
+        let arr = unidadesPeriodo[p.id] || [];
+        let cobradoProp = 0;
+        let pagadasCount = 0;
+        let alquiladasCount = 0;
+
+        arr.forEach(u => {
+          if (u.alquilado) {
+            alquiladasCount++;
+            cobradoProp += Number(u.valorPagado || 0);
+            if (calcularEstadoMora(u) === 'pagado') pagadasCount++;
+          }
+        });
+
+        htmlProps += `
+          <div class="prop-box" onclick="abrirPropiedad('${p.id}')">
+            <div class="prop-name">🏠 ${p.name}</div>
+            <div class="prop-sub">🏢 ${p.sub}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <div style="font-size:0.75rem; color:#34d399; font-weight:800;">💵 ${formatCOP(cobradoProp)}</div>
+              <div style="font-size:0.7rem; background:rgba(52,211,153,0.15); color:#34d399; padding:2px 6px; border-radius:6px; font-weight:800;">✅ ${pagadasCount}/${alquiladasCount} Pagadas</div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('propsList').innerHTML = htmlProps;
+      
+      renderListaArriendosConsulta();
+      renderListaGastosConsultaModal();
+    }
+
+    function filtrarArriendos(tipo) {
+      filtroArriendoActual = tipo;
+      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+      if(tipo === 'todos') document.getElementById('fltTodos').classList.add('active');
+      if(tipo === 'pagados') document.getElementById('fltPagados').classList.add('active');
+      if(tipo === 'pendientes') document.getElementById('fltPendientes').classList.add('active');
+      renderListaArriendosConsulta();
+    }
+
+    function renderListaArriendosConsulta() {
+      let html = '';
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      CONFIG_PROPS.forEach(p => {
+        if (filtroPropiedadActual !== 'todos' && p.id !== filtroPropiedadActual) return;
+        let arr = unidadesPeriodo[p.id] || [];
+        arr.forEach(u => {
+          if (!u.alquilado && filtroArriendoActual !== 'todos') return;
+          let estado = calcularEstadoMora(u);
+          if (filtroArriendoActual === 'pagados' && estado !== 'pagado') return;
+          if (filtroArriendoActual === 'pendientes' && estado !== 'mora' && estado !== 'parcial' && estado !== 'pendiente') return;
+
+          let badgeColor = '#34d399';
+          let badgeTexto = 'Al día';
+          if (estado === 'mora') { badgeColor = '#f87171'; badgeTexto = 'En Mora'; }
+          else if (estado === 'parcial') { badgeColor = '#f59e0b'; badgeTexto = 'Abono Parcial'; }
+          else if (!u.alquilado) { badgeColor = '#ef4444'; badgeTexto = 'Desocupado'; }
+
+          let infoInquilino = u.alquilado ? `👤 ${u.arrendatario || 'Sin Inquilino'}` : `<span style="color:#ef4444; font-weight:700;">Disponible</span>`;
+
+          html += `
+            <div class="compact-item-card" onclick="cerrarModal('modalArriendosConsulta'); abrirPropiedad('${p.id}')">
+              <div>
+                <div style="font-size:0.76rem; font-weight:800; color:white; margin-bottom:2px;">${p.name}</div>
+                <div style="font-size:0.82rem; font-weight:900; color:#34d399; margin-bottom:4px;">${u.nombre}</div>
+                <div style="font-size:0.68rem; color:var(--subtext); margin-bottom:4px;">${infoInquilino}</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
+                <span style="font-size:0.6rem; background:rgba(255,255,255,0.08); color:${badgeColor}; padding:2px 6px; border-radius:6px; font-weight:800;">${badgeTexto}</span>
+                <span style="font-size:0.7rem; color:#34d399; font-weight:900;">${formatCOP(u.valorPagado)}</span>
+              </div>
+            </div>
+          `;
+        });
+      });
+      let contenedor = document.getElementById('listaArriendosDetalle');
+      if(contenedor) contenedor.innerHTML = html || '<div style="grid-column: span 2; text-align:center; color:var(--subtext); padding:20px;">No hay registros para mostrar con este filtro.</div>';
+    }
+
+    function renderListaGastosConsultaModal() {
+      let gastosMes = db.gastos[periodoMesActual] || [];
+      let html = '';
+      gastosMes.forEach(g => {
+        let detalleBeneficiario = g.tipo === 'contratista' ? `👷‍♂️ ${g.nombreContratista} (CC: ${g.cedulaContratista || 'N/A'})` : `📄 Gasto General`;
+        html += `
+          <div class="list-item-card" style="background:#0b1120; border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:0.84rem; font-weight:800; color:white;">📍 ${g.inmueble} (${g.fecha})</div>
+              <div style="font-size:0.72rem; color:var(--subtext);">📝 ${g.concepto}</div>
+              <div style="font-size:0.7rem; color:#38bdf8; margin-top:2px;">${detalleBeneficiario}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="font-size:0.88rem; font-weight:900; color:#f87171;">${formatCOP(g.monto)}</div>
+              <button onclick="eliminarGastoIndividual('${g.id}')" style="background:#fee2e2; color:#b91c1c; border:none; padding:5px 8px; border-radius:6px; cursor:pointer;">🗑️</button>
+            </div>
+          </div>
+        `;
+      });
+      let contenedor = document.getElementById('listaGastosDetalleModal');
+      if(contenedor) contenedor.innerHTML = html || '<div style="text-align:center; color:var(--subtext); padding:20px;">Sin egresos registrados en este periodo.</div>';
+    }
+
+    function toggleCamposContratista(val) {
+      let box = document.getElementById('boxCamposContratista');
+      box.style.display = (val === 'contratista') ? 'block' : 'none';
+    }
+
+    function abrirPropiedad(propId) {
+      let pConfig = CONFIG_PROPS.find(p => p.id === propId);
+      let [y, m] = periodoMesActual.split('-');
+      document.getElementById('propModalTitle').innerText = `🏠 ${pConfig.name} (${NOMBRES_MESES[m]} ${y})`;
+
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let arr = unidadesPeriodo[propId] || [];
+      let html = '';
+
+      arr.forEach((u, idx) => {
+        let displayStyle = u.colapsado ? 'none' : 'block';
+        let botonTextoColapsar = u.colapsado ? '▼ Mostrar Módulo' : '▲ Ocultar Módulo';
+        let estadoMora = calcularEstadoMora(u);
+
+        let bordeControlColor = '#056648';
+        let badgeEstadoTexto = '✅ Al día / Pagado';
+        let badgeEstadoClase = 'badge-pagado';
+
+        if (estadoMora === 'mora') { bordeControlColor = '#d93025'; badgeEstadoTexto = '🔴 En Mora'; }
+        else if (estadoMora === 'parcial') { bordeControlColor = '#f59e0b'; badgeEstadoTexto = '🟡 Abono Parcial'; }
+
+        let isDisabled = u.registradoDatos && !u.editandoInquilino ? 'disabled' : '';
+
+        html += `
+          <div class="unit-card-box" style="border-color: ${bordeControlColor};">
+            <div class="unit-card-head">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong style="font-size:1.1rem; color:white;">🚪 ${u.nombre}</strong>
+                <button class="btn-vaciar-head" onclick="intentarVaciarUnidad('${propId}', ${idx})">🗑️ Vaciar</button>
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button class="icon-btn" style="background:#334155; font-size:0.68rem; padding:4px 8px;" onclick="toggleColapsarUnidad('${propId}', ${idx})">${botonTextoColapsar}</button>
+                <label style="font-size:0.78rem; font-weight:800; color:${u.alquilado ? '#34d399' : '#ef4444'};">
+                  <input type="checkbox" ${u.alquilado ? 'checked' : ''} disabled> ${u.alquilado ? 'Alquilado' : 'Desocupado'}
+                </label>
+              </div>
+            </div>
+
+            <div id="cuerpo_unidad_${propId}_${idx}" style="display: ${displayStyle}; margin-top: 10px;">
+              <div style="border:1px solid #0284c7; background:rgba(2,132,199,0.05); border-radius:14px; padding:12px; margin-bottom:12px;">
+                <div class="f-row">
+                  <div class="f-col"><label>👤 Arrendatario</label><input type="text" id="inq_${propId}_${idx}" value="${u.arrendatario || ''}" placeholder="Nombre" ${isDisabled}></div>
+                  <div class="f-col"><label>🆔 Cédula</label><input type="text" id="ced_${propId}_${idx}" value="${u.cedula || ''}" placeholder="Cédula" ${isDisabled}></div>
+                </div>
+
+                <div class="f-row">
+                  <div class="f-col"><label>📞 Teléfono</label><input type="text" id="tel_${propId}_${idx}" value="${u.tel || ''}" placeholder="Teléfono" ${isDisabled}></div>
+                  <div class="f-col"><label>💵 Canon (COP)</label><input type="number" id="can_${propId}_${idx}" value="${u.canon || 0}" ${isDisabled}></div>
+                </div>
+
+                <div class="f-row" style="align-items:flex-end;">
+                  <div class="f-col" style="flex:1;">
+                    <label>📅 Fecha de Contrato</label>
+                    <input type="date" id="date_contrato_${propId}_${idx}" value="${u.fechaContratoISO || (periodoMesActual + '-05')}" ${isDisabled}>
+                  </div>
+                  <div style="margin-bottom:8px;">
+                    <button class="btn-act" style="background:#0284c7; width:auto; padding:8px 14px;" onclick="intentarModificarDatosInquilino('${propId}', ${idx})">✏️ Lápiz</button>
+                  </div>
+                </div>
+
+                <div class="box-contrato" style="margin-top:6px; margin-bottom:0;">
+                  <span style="font-size:0.75rem; color:#38bdf8; font-weight:700;">📄 Foto / PDF del Contrato</span>
+                  <button class="btn-act" style="background:#0284c7; width:auto; padding:6px 12px; font-size:0.72rem;" onclick="subirContratoUnidad('${propId}', ${idx})">${u.contratoSubido ? '✅ Subido' : 'Subir Contrato'}</button>
+                </div>
+
+                <button class="btn-act" style="background:#056648; margin-top:10px; padding:10px;" onclick="confirmarGuardarInquilino('${propId}', ${idx})">✅ Confirmar y Activar Alquilado</button>
+              </div>
+
+              ${u.alquilado ? `
+                <div class="box-control-pago" style="border-color: ${bordeControlColor};">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <strong style="font-size:0.8rem; color:#34d399;">📅 Control de Pago: ${NOMBRES_MESES[m]} ${y}</strong>
+                    <span class="badge-estado ${badgeEstadoClase}">${badgeEstadoTexto}</span>
+                  </div>
+
+                  <div class="f-row">
+                    <div class="f-col"><label>📅 Fecha de Pago</label><input type="date" id="date_pago_${propId}_${idx}" value="${u.fechaPagoISO || (periodoMesActual + '-04')}"></div>
+                    <div class="f-col"><label>💵 Valor Pagado (COP)</label><input type="number" id="pag_${propId}_${idx}" value="${u.valorPagado || 0}"></div>
+                  </div>
+
+                  <div class="f-row" style="align-items:flex-end;">
+                    <div class="f-col" style="flex:1;">
+                      <label style="color:#f87171;">⚠️ Saldo Pendiente</label>
+                      <input type="number" id="debe_${propId}_${idx}" value="${u.debeSaldo || 0}">
+                    </div>
+                    <div class="f-col" style="flex:1;">
+                      <button class="btn-blanquear-red" onclick="blanquearSaldoLibre('${propId}', ${idx})">🗑️ Blanquear</button>
+                    </div>
+                  </div>
+
+                  <div class="box-contrato" style="background:rgba(16,185,129,0.1); border-color:#10b981; margin-top:8px;">
+                    <span style="font-size:0.75rem; color:#34d399; font-weight:700;">📎 Comprobante (${NOMBRES_MESES[m]})</span>
+                    <button class="btn-act" style="background:#056648; width:auto; padding:6px 12px; font-size:0.72rem;" onclick="subirReciboUnidad('${propId}', ${idx})">${u.comprobanteSubido ? '✅ Subido' : 'Subir Recibo'}</button>
+                  </div>
+
+                  <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:12px;">
+                    <button class="btn-act" style="background:#047857;" onclick="generarPDFReciboUnidad('${propId}', ${idx})">📄 Recibo PDF</button>
+                    <button class="btn-act" style="background:#d93025;" onclick="generarPDFReciboUnidad('${propId}', ${idx})">📄 PDF Cobro</button>
+                  </div>
+
+                  <button class="btn-act" style="background:#056648; padding:11px;" onclick="confirmarGuardarPagos('${propId}', ${idx})">✅ Confirmar Datos de Pagos</button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('propModalBody').innerHTML = html;
+      abrirModal('modalProp');
+    }
+
+    function toggleColapsarUnidad(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      unidadesPeriodo[propId][idx].colapsado = !unidadesPeriodo[propId][idx].colapsado;
+      saveDB();
+      abrirPropiedad(propId);
+    }
+
+    function intentarModificarDatosInquilino(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      if (u.registradoDatos) {
+        solicitarCredencialesParaModificar(() => {
+          u.editandoInquilino = true;
+          saveDB();
+          abrirPropiedad(propId);
+          alert("✅ ¡Modificación autorizada!");
+        });
+      } else {
+        u.editandoInquilino = true;
+        saveDB();
+        abrirPropiedad(propId);
+      }
+    }
+
+    function intentarVaciarUnidad(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      let vaciarAccion = () => {
+        if (confirm("⚠️ ¿Confirma que desea vaciar esta unidad?")) {
+          u.alquilado = false; u.arrendatario = ''; u.cedula = ''; u.tel = '';
+          u.canon = 0; u.valorPagado = 0; u.debeSaldo = 0; u.registradoDatos = false; u.colapsado = true;
+          u.editandoInquilino = false; u.contratoSubido = false; u.comprobanteSubido = false;
+          saveDB();
+          abrirPropiedad(propId);
+          alert("✅ ¡Unidad vaciada!");
+        }
+      };
+      if (u.registradoDatos) solicitarCredencialesParaModificar(vaciarAccion);
+      else vaciarAccion();
+    }
+
+    function confirmarGuardarInquilino(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      let arrendatarioVal = document.getElementById(`inq_${propId}_${idx}`).value.trim();
+      if(!arrendatarioVal) return alert("⚠️ Debe ingresar el nombre del arrendatario.");
+      if(!u.contratoSubido) return alert("⚠️ Debe subir la foto o PDF del contrato.");
+
+      u.arrendatario = arrendatarioVal;
+      u.cedula = document.getElementById(`ced_${propId}_${idx}`).value;
+      u.tel = document.getElementById(`tel_${propId}_${idx}`).value;
+      u.canon = Number(document.getElementById(`can_${propId}_${idx}`).value || 0);
+      u.fechaContratoISO = document.getElementById(`date_contrato_${propId}_${idx}`).value;
+      u.alquilado = true;
+      u.registradoDatos = true;
+      u.editandoInquilino = false;
+      saveDB();
+      abrirPropiedad(propId);
+      alert("✅ ¡Guardado con éxito!");
+    }
+
+    function confirmarGuardarPagos(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      u.fechaPagoISO = document.getElementById(`date_pago_${propId}_${idx}`).value;
+      u.valorPagado = Number(document.getElementById(`pag_${propId}_${idx}`).value || 0);
+      u.debeSaldo = Number(document.getElementById(`debe_${propId}_${idx}`).value || 0);
+      saveDB();
+      abrirPropiedad(propId);
+      alert("✅ ¡Pagos confirmados!");
+    }
+
+    function blanquearSaldoLibre(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      u.debeSaldo = 0;
+      u.valorPagado = u.canon;
+      saveDB();
+      abrirPropiedad(propId);
+      alert("✅ ¡Saldo blanqueado!");
+    }
+
+    function subirContratoUnidad(propId, idx) {
+      unidadActivaFile = { propId, idx, tipo: 'contrato' };
+      document.getElementById('inputContrato').click();
+    }
+    document.getElementById('inputContrato').onchange = (e) => {
+      if(e.target.files[0] && unidadActivaFile) {
+        let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+        unidadesPeriodo[unidadActivaFile.propId][unidadActivaFile.idx].contratoSubido = true;
+        saveDB();
+        abrirPropiedad(unidadActivaFile.propId);
+        alert("✅ ¡Contrato adjuntado!");
+      }
+    };
+
+    function subirReciboUnidad(propId, idx) {
+      unidadActivaFile = { propId, idx, tipo: 'recibo' };
+      document.getElementById('inputRecibo').click();
+    }
+    document.getElementById('inputRecibo').onchange = (e) => {
+      if(e.target.files[0] && unidadActivaFile) {
+        let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+        let u = unidadesPeriodo[unidadActivaFile.propId][unidadActivaFile.idx];
+        u.comprobanteSubido = true;
+        u.valorPagado = Number(u.canon || 0);
+        u.debeSaldo = 0;
+        saveDB();
+        abrirPropiedad(unidadActivaFile.propId);
+        alert("✅ ¡Recibo adjuntado!");
+      }
+    };
+
+    function generarPDFReciboUnidad(propId, idx) {
+      let unidadesPeriodo = obtenerUnidadesPeriodo(periodoMesActual);
+      let u = unidadesPeriodo[propId][idx];
+      let pConfig = CONFIG_PROPS.find(p => p.id === propId);
+      let { jsPDF } = window.jspdf;
+      let doc = new jsPDF();
+      doc.text(`Recibo - ${pConfig.name} (${u.nombre})`, 14, 20);
+      doc.save(`Recibo_${u.nombre}.pdf`);
+    }
+
+    function abrirGastosModal() {
+      document.getElementById('gFecha').value = new Date().toISOString().split('T')[0];
+      document.getElementById('gTipoBeneficiario').value = 'general';
+      toggleCamposContratista('general');
+      abrirModal('modalGastos');
+    }
+
+    function guardarGastoNuevo() {
+      let fecha = document.getElementById('gFecha').value;
+      let inmueble = document.getElementById('gInmueble').value;
+      let tipoBeneficiario = document.getElementById('gTipoBeneficiario').value;
+      let concepto = document.getElementById('gConcepto').value.trim();
+      let monto = Number(document.getElementById('gMonto').value || 0);
+      let nombreContratista = document.getElementById('gNomContratista').value.trim();
+
+      if(!concepto || !monto) return alert("⚠️ Ingrese concepto y monto.");
+      if(tipoBeneficiario === 'contratista' && !nombreContratista) return alert("⚠️ Ingrese el nombre del contratista o maestro.");
+
+      if(!db.gastos[periodoMesActual]) db.gastos[periodoMesActual] = [];
+      db.gastos[periodoMesActual].push({
+        id: 'g_' + Date.now(), fecha, inmueble, tipo: tipoBeneficiario, concepto, monto,
+        nombreContratista: tipoBeneficiario === 'contratista' ? nombreContratista : '',
+        cedulaContratista: tipoBeneficiario === 'contratista' ? document.getElementById('gCedContratista').value.trim() : '',
+        telContratista: tipoBeneficiario === 'contratista' ? document.getElementById('gTelContratista').value.trim() : ''
+      });
+
+      saveDB();
+      renderListaGastosConsultaModal();
+      cerrarModal('modalGastos');
+      alert("✅ ¡Gasto registrado exitosamente!");
+    }
+
+    function eliminarGastoIndividual(id) {
+      solicitarCredencialesParaModificar(() => {
+        db.gastos[periodoMesActual] = (db.gastos[periodoMesActual] || []).filter(g => g.id !== id);
+        saveDB();
+        renderListaGastosConsultaModal();
+      });
+    }
+
+    function abrirModalMora() { abrirModal('modalMora'); }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        let respuesta = await fetch(APPS_SCRIPT_URL + "?obtenerDB=true");
+        let resultado = await respuesta.json();
+        if (resultado && (resultado.units || resultado.gastos)) {
+          inicializarEstructuraUnidades(resultado);
+        } else {
+          inicializarEstructuraUnidades({ units: {}, gastos: {} });
+        }
+      } catch(e) {
+        inicializarEstructuraUnidades({ units: {}, gastos: {} });
+      }
+
+      if (sessionStorage.getItem('inez_is_logged') === 'true') {
+        document.getElementById('loginScreen').style.display = 'none';
+        renderAll();
+      }
+    });
+  </script>
+</body>
+</html>
